@@ -1,0 +1,117 @@
+from sqlalchemy import create_engine, Column, Integer, String, Float
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+
+engine = create_engine('sqlite:///funcionarios.db')
+Base = declarative_base()
+
+
+class Funcionario(Base):
+    __tablename__ = 'funcionarios'
+    
+    id = Column(Integer, primary_key=True)
+    nome = Column(String)
+    idade = Column(Integer)
+    cpf = Column(String, unique=True)
+    setor = Column(String)
+    funcao = Column(String)
+    salario = Column(Float)
+    telefone = Column(String)
+
+    def __repr__(self):
+        return f"<Funcionario(nome={self.nome}, cpf={self.cpf})>"
+
+
+Base.metadata.create_all(engine)
+
+
+Session = sessionmaker(bind=engine)
+session = Session()
+
+
+def criar_funcionario(nome, idade, cpf, setor, funcao, salario, telefone):
+    novo_funcionario = Funcionario(
+        nome=nome, idade=idade, cpf=cpf, setor=setor, funcao=funcao, salario=salario, telefone=telefone
+    )
+    session.add(novo_funcionario)
+    session.commit()
+
+def listar_funcionarios():
+    funcionarios = session.query(Funcionario).all()
+    for func in funcionarios:
+        print(func)
+
+def atualizar_funcionario(cpf, nome=None, idade=None, setor=None, funcao=None, salario=None, telefone=None):
+    funcionario = session.query(Funcionario).filter_by(cpf=cpf).first()
+    if funcionario:
+        if nome:
+            funcionario.nome = nome
+        if idade:
+            funcionario.idade = idade
+        if setor:
+            funcionario.setor = setor
+        if funcao:
+            funcionario.funcao = funcao
+        if salario:
+            funcionario.salario = salario
+        if telefone:
+            funcionario.telefone = telefone
+        session.commit()
+
+def deletar_funcionario(cpf):
+    funcionario = session.query(Funcionario).filter_by(cpf=cpf).first()
+    if funcionario:
+        session.delete(funcionario)
+        session.commit()
+
+
+def menu():
+    while True:
+        print("\n1. Criar Funcionario")
+        print("2. Listar Funcionarios")
+        print("3. Atualizar Funcionario")
+        print("4. Deletar Funcionario")
+        print("5. Sair")
+
+        opcao = input("Escolha uma opção: ")
+
+        if opcao == '1':
+            nome = input("Nome: ")
+            idade = int(input("Idade: "))
+            cpf = input("CPF: ")
+            setor = input("Setor: ")
+            funcao = input("Função: ")
+            salario = float(input("Salário: "))
+            telefone = input("Telefone: ")
+            criar_funcionario(nome, idade, cpf, setor, funcao, salario, telefone)
+        
+        elif opcao == '2':
+            listar_funcionarios()
+        
+        elif opcao == '3':
+            cpf = input("CPF do funcionário para atualizar: ")
+            nome = input("Novo nome (ou deixe em branco para manter o atual): ")
+            idade = input("Nova idade (ou deixe em branco): ")
+            setor = input("Novo setor (ou deixe em branco): ")
+            funcao = input("Nova função (ou deixe em branco): ")
+            salario = input("Novo salário (ou deixe em branco): ")
+            telefone = input("Novo telefone (ou deixe em branco): ")
+            atualizar_funcionario(cpf, nome=nome if nome else None,
+                                  idade=int(idade) if idade else None,
+                                  setor=setor if setor else None,
+                                  funcao=funcao if funcao else None,
+                                  salario=float(salario) if salario else None,
+                                  telefone=telefone if telefone else None)
+        
+        elif opcao == '4':
+            cpf = input("CPF do funcionário para deletar: ")
+            deletar_funcionario(cpf)
+        
+        elif opcao == '5':
+            break
+
+        else:
+            print("Opção inválida, tente novamente.")
+
+menu()
